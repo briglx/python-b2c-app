@@ -218,16 +218,27 @@ Deploy web app to app service.
 
 .. code-block:: bash
 
+    az login --tenant $TENANT.onmicrosoft.com
+
     gitrepo=https://github.com/briglx/python-b2c-app
 
     # Deploy code from a public GitHub repository.
-    az webapp deployment source config --name $webapp --resource-group $rg_name \
-    --repo-url $gitrepo --branch master --manual-integration
+    az webapp deployment source config --name $webapp --resource-group $rg_name --repo-url $gitrepo --branch master --manual-integration
 
-    # Use curl to see the web app.
-    site="http://$webapp.azurewebsites.net"
-    echo $site
-    curl "$site"
+    # Set app env vars
+    az webapp config appsettings set --name $webapp --resource-group $rg_name --settings @prod.env
+
+     # enable logs
+    az webapp log config --web-server-logging filesystem --name $webapp --resource-group $rg_name
+
+    # tail logs
+    az webapp log tail --name $webapp --resource-group $rg_name
+
+    # Update application web-redirect-url
+    az login --tenant $B2C_TENANT.onmicrosoft.com --allow-no-subscriptions
+    app_id=$(az ad app list --display-name $app_name --query [].appId -o tsv)
+    az ad app update --id $app_id --web-redirect-uris https://$webapp.azurewebsites.net/getAToken
+
 
 
 References
