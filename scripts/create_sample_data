@@ -1,0 +1,31 @@
+#!/bin/bash
+#
+# Create sample data for the application
+
+TENANT_NAME=$1
+
+if [[ $# -ne 2 ]]; then
+    SAMPLE_DOMAIN=contoso.com
+else
+    SAMPLE_DOMAIN=$2
+fi
+
+
+sample_customer_domain=$SAMPLE_DOMAIN
+sample_customer_group_name=${sample_customer_domain//[\.]/_}
+test_user_prefix=test_user
+test_user_password=Test1234!
+
+echo creating group...
+az ad group create --display-name "${sample_customer_group_name}" --mail-nickname "${sample_customer_group_name}"
+echo
+echo creating users ...
+for i in {1..4} ; do
+
+    principal_name=$(uuidgen)
+    echo az ad user create --display-name "${test_user_prefix}_${i}" --password "$test_user_password" --user-principal-name "${principal_name}@${TENANT_NAME}.onmicrosoft.com"
+    user_id=$(az ad user create --display-name "${test_user_prefix}_${i}" --password "$test_user_password" --user-principal-name "${principal_name}@${TENANT_NAME}.onmicrosoft.com" --query id -o tsv)
+    echo adding user "$user_id" to group "$sample_customer_group_name"
+    az ad group member add --group "$sample_customer_group_name" --member-id "$user_id"
+
+done
